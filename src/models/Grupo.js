@@ -15,14 +15,24 @@ const GrupoSchema = new mongoose.Schema({
     },
     moneda: {
         type: String,
+        required: [true, 'El tipo de moneda es obligatorio'],
         default: 'ARS',
-        trim: true
+        uppercase: true,
+        trim: true,
+        minLength: 3,
+        maxLength: 3
     },
     participantes: {
         type: [String],
         validate: [(value) => value.length >= 1, 'El grupo debe tener al menos un participante']
     },
     gastos: [GastoSchema]
-}, { timestamps: true });
+},
+    {
+        timestamps: true,
+        versionKey: false
+    }
+
+);
 
 module.exports = mongoose.model('Grupo', GrupoSchema);

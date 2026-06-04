@@ -19,6 +19,11 @@ const GastoSchema = new mongoose.Schema({
         type: [String],
         required: [true, 'Se debe especificar entre quiénes se divide']
     }
-}, { timestamps: true });
+},
+    {
+        timestamps: true,
+        versionKey: false
+    }
+);
 
 module.exports = GastoSchema;
