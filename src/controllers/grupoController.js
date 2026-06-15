@@ -1,6 +1,3 @@
-const { default: mongoose } = require('mongoose');
-const Grupo = require('../models/Grupo');
-const crypto = require('crypto');
 const grupoService = require('../services/grupoService');
 
 const crearGrupo = async (req, res) => {
@@ -32,8 +29,15 @@ const getGrupoPorCodigo = async (req, res) => {
 
 const crearGasto = async (req, res) => {
     try {
-        const gastoGuardado = await grupoService.agregarGastoAGrupo(req.params.codigoGrupo, req.body);
-        res.status(201).json({ success: true, message: 'Gasto agregado correctamente', data: gastoGuardado });
+        const gastoGuardado = await grupoService.agregarGastoAGrupo(
+            req.params.codigoGrupo,
+            req.body
+        );
+        res.status(201).json({
+            success: true,
+            message: 'Gasto agregado correctamente',
+            data: gastoGuardado
+        });
     } catch (error) {
         const statusCode = error.statusCode || 500;
         res.status(statusCode).json({ success: false, error: error.message });
@@ -41,5 +45,8 @@ const crearGasto = async (req, res) => {
 };
 
 module.exports = {
-    crearGrupo, getAllGrupos, getGrupoPorCodigo, crearGasto
+    crearGrupo,
+    getAllGrupos,
+    getGrupoPorCodigo,
+    crearGasto
 };

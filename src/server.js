@@ -5,7 +5,7 @@ const connectDB = require('./config/db');
 const startServer = async () => {
     try {
         await connectDB();
-        
+
         app.listen(PORT, () => {
             console.log(`Servidor escuchando en el puerto ${PORT}`);
         });
