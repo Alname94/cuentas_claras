@@ -56,6 +56,20 @@ class GrupoService {
 
         return grupo.gastos[grupo.gastos.length - 1];
     }
+
+    /**
+     * Calcula los saldos netos de cada participante en un grupo, así como las deudas simplificadas para saldar el grupo.
+     * @param {string} codigoGrupo El código del grupo para el cual se quieren calcular los saldos
+     * @returns Un objeto con los totales pagados por cada participante, sus balances netos y las deudas simplificadas para saldar el grupo
+     */
+    async calcularSaldos(codigoGrupo) {
+        const grupo = await buscarGrupo(codigoGrupo, true);
+
+        const { totales, balances } = calcularBalancesNetos(grupo.participantes, grupo.gastos);
+        const deudasSimplificadas = simplificarDeudas(grupo.participantes, balances);
+
+        return { totales, balances, deudasSimplificadas };
+    }
 }
 
 async function buscarGrupo(codigoGrupo, conLean = false) {
@@ -74,6 +88,81 @@ async function buscarGrupo(codigoGrupo, conLean = false) {
     }
 
     return grupo;
+}
+
+function calcularBalancesNetos(participantes, gastos) {
+    const totales = {};
+    const balances = {};
+
+    // Inicializar totales y balances para cada participante
+    participantes.forEach((p) => {
+        totales[p] = 0;
+        balances[p] = 0;
+    });
+
+    gastos.forEach((gasto) => {
+        const { monto, pagadoPor, divididoEntre } = gasto;
+
+        // El participante que pagó el gasto suma el monto total a su total
+        if (totales[pagadoPor] !== undefined) totales[pagadoPor] += monto;
+
+        // Cada participante en "divididoEntre" debe su parte proporcional del gasto
+        const cuotaParte = monto / divididoEntre.length;
+        divididoEntre.forEach((p) => {
+            if (balances[p] !== undefined) balances[p] -= cuotaParte;
+        });
+    });
+
+    // Calcular el balance neto para cada participante sumando lo que pagó y restando lo que debe
+    participantes.forEach((p) => {
+        balances[p] = Math.round((balances[p] + totales[p]) * 100) / 100;
+    });
+
+    return { totales, balances };
+}
+
+function simplificarDeudas(participantes, balances) {
+    // Crear listas de deudores y acreedores
+    let deudores = participantes
+        .map((p) => ({ persona: p, saldo: balances[p] }))
+        .filter((x) => x.saldo < -0.01)
+        .sort((a, b) => a.saldo - b.saldo);
+
+    let acreedores = participantes
+        .map((p) => ({ persona: p, saldo: balances[p] }))
+        .filter((x) => x.saldo > 0.01)
+        .sort((a, b) => b.saldo - a.saldo);
+
+    const transferencias = [];
+    let i = 0, // Índice para deudores
+        j = 0; // Índice para acreedores
+
+    // Mientras haya deudores y acreedores pendientes
+    while (i < deudores.length && j < acreedores.length) {
+        let deudor = deudores[i];
+        let acreedor = acreedores[j];
+
+        // El monto a transferir es el mínimo entre lo que debe el deudor y lo que tiene el acreedor
+        let montoTransferencia = Math.min(Math.abs(deudor.saldo), acreedor.saldo);
+        montoTransferencia = Math.round(montoTransferencia * 100) / 100;
+
+        if (montoTransferencia > 0) {
+            transferencias.push({
+                de: deudor.persona,
+                a: acreedor.persona,
+                monto: montoTransferencia
+            });
+        }
+
+        // Simular la transferencia para actualizar los saldos y avanzar en las listas
+        deudor.saldo += montoTransferencia;
+        acreedor.saldo -= montoTransferencia;
+
+        if (Math.abs(deudor.saldo) < 0.01) i++;
+        if (acreedor.saldo < 0.01) j++;
+    }
+
+    return transferencias;
 }
 
 module.exports = new GrupoService();

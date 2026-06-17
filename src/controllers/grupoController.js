@@ -44,9 +44,19 @@ const crearGasto = async (req, res) => {
     }
 };
 
+const calcularSaldos = async (req, res) => {
+    try {
+        const saldos = await grupoService.calcularSaldos(req.params.codigoGrupo);
+        res.status(200).json({ success: true, data: saldos });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Error al calcular los saldos' });
+    }
+};
+
 module.exports = {
     crearGrupo,
     getAllGrupos,
     getGrupoPorCodigo,
-    crearGasto
+    crearGasto,
+    calcularSaldos
 };
