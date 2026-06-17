@@ -22,22 +22,15 @@ class GrupoService {
     }
 
     async obtenerPorCodigo(codigoGrupo) {
-        const grupo = await Grupo.findOne({ codigoGrupo }).lean();
-        if (!grupo) {
-            throw new Error('El grupo no existe o el código es inválido');
-        }
-        return grupo;
+        return await buscarGrupo(codigoGrupo, true);
     }
 
     async agregarGastoAGrupo(codigoGrupo, datosGasto) {
-        const { descripcion, monto, pagadoPor, divididoEntre } = datosGasto;
+        let { descripcion, monto, pagadoPor, divididoEntre } = datosGasto;
 
-        const grupo = await Grupo.findOne({ codigoGrupo });
-        if (!grupo) {
-            const error = new Error('El grupo especificado no existe');
-            error.statusCode = 404;
-            throw error;
-        }
+        monto = Math.round(monto * 100) / 100;
+
+        const grupo = await buscarGrupo(codigoGrupo);
 
         if (!grupo.participantes.includes(pagadoPor)) {
             const error = new Error(
@@ -63,6 +56,24 @@ class GrupoService {
 
         return grupo.gastos[grupo.gastos.length - 1];
     }
+}
+
+async function buscarGrupo(codigoGrupo, conLean = false) {
+    let query = Grupo.findOne({ codigoGrupo });
+
+    if (conLean) {
+        query = query.lean();
+    }
+
+    const grupo = await query;
+
+    if (!grupo) {
+        const error = new Error('El grupo especificado no existe o el código es inválido');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    return grupo;
 }
 
 module.exports = new GrupoService();
