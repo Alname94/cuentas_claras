@@ -49,12 +49,17 @@ class GrupoService {
             throw error;
         }
 
-        const nuevoGasto = { descripcion, monto, pagadoPor, divididoEntre };
-        grupo.gastos.push(nuevoGasto);
+        const gastoInstancia = grupo.gastos.create({
+            descripcion,
+            monto,
+            pagadoPor,
+            divididoEntre
+        });
+        grupo.gastos.push(gastoInstancia);
 
         await grupo.save();
 
-        return grupo.gastos[grupo.gastos.length - 1];
+        return gastoInstancia;
     }
 
     /**

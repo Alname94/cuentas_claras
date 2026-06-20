@@ -11,8 +11,7 @@ const GastoSchema = new mongoose.Schema(
             type: Number,
             required: [true, 'El monto es obligatorio'],
             min: [0, 'El monto no puede ser negativo'],
-            // eslint-disable-next-line prettier/prettier
-            set: m => Math.round(m * 100) / 100
+            set: (m) => Math.round(m * 100) / 100
         },
         pagadoPor: {
             type: String,
