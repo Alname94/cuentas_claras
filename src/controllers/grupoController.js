@@ -61,11 +61,21 @@ const calcularSaldos = async (req, res, next) => {
     }
 };
 
+const reembolsarDeuda = async (req, res, next) => {
+    try {
+        const transferencia = await grupoService.reembolsarDeuda(req.params.codigoGrupo, req.body);
+        res.status(200).json({ success: true, data: transferencia });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     crearGrupo,
     getAllGrupos,
     getGrupoPorCodigo,
     eliminarGrupo,
     crearGasto,
-    calcularSaldos
+    calcularSaldos,
+    reembolsarDeuda
 };

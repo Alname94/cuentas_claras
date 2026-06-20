@@ -81,6 +81,31 @@ class GrupoService {
 
         return { totales, balances, deudasSimplificadas };
     }
+
+    async reembolsarDeuda(codigoGrupo, datosPago) {
+        const { de, a, monto } = datosPago;
+        const grupo = await buscarGrupo(codigoGrupo);
+
+        // Validar que ambos participantes existan en este grupo específico
+        if (!grupo.participantes.includes(de) || !grupo.participantes.includes(a)) {
+            const error = new Error('Uno o ambos participantes no pertenecen a este grupo.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Crear un registro especial dentro del array de gastos
+        const pagoInstancia = grupo.gastos.create({
+            descripcion: `Liquidación: ${de} ➡️ ${a}`,
+            monto: Math.round(monto * 100) / 100,
+            pagadoPor: de,
+            divididoEntre: [a] // Al dividirse solo entre 'a', el sistema netea el balance entre ambos
+        });
+
+        grupo.gastos.push(pagoInstancia);
+        await grupo.save();
+
+        return pagoInstancia;
+    }
 }
 
 async function buscarGrupo(codigoGrupo, conLean = false) {
@@ -118,7 +143,7 @@ function calcularBalancesNetos(participantes, gastos) {
         if (totales[pagadoPor] !== undefined) totales[pagadoPor] += monto;
 
         // Cada participante en "divididoEntre" debe su parte proporcional del gasto
-        const cuotaParte = Math.round((monto / divididoEntre.length) * 100) / 100;
+        const cuotaParte = monto / divididoEntre.length;
         divididoEntre.forEach((p) => {
             if (balances[p] !== undefined) balances[p] -= cuotaParte;
         });
@@ -126,7 +151,13 @@ function calcularBalancesNetos(participantes, gastos) {
 
     // Calcular el balance neto para cada participante sumando lo que pagó y restando lo que debe
     participantes.forEach((p) => {
-        balances[p] = Math.round((balances[p] + totales[p]) * 100) / 100;
+        let balanceRedondeado = Math.round((balances[p] + totales[p]) * 100) / 100;
+
+        // tolerancia UX: Si el residuo es de 1 o 2 centavos (positivo o negativo), lo limpiamos a 0
+        if (Math.abs(balanceRedondeado) <= 0.02) {
+            balanceRedondeado = 0;
+        }
+        balances[p] = balanceRedondeado;
     });
 
     return { totales, balances };
