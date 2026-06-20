@@ -1,33 +1,33 @@
 const grupoService = require('../services/grupoService');
 
-const crearGrupo = async (req, res) => {
+const crearGrupo = async (req, res, next) => {
     try {
         const nuevoGrupo = await grupoService.crearGrupo(req.body);
         res.status(201).json({ success: true, data: nuevoGrupo });
     } catch (error) {
-        res.status(400).json({ success: false, error: error.message });
+        next(error);
     }
 };
 
-const getAllGrupos = async (req, res) => {
+const getAllGrupos = async (req, res, next) => {
     try {
         const grupos = await grupoService.obtenerTodosLosGrupos();
         res.status(200).json({ success: true, count: grupos.length, data: grupos });
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Error al obtener los grupos' });
+        next(error);
     }
 };
 
-const getGrupoPorCodigo = async (req, res) => {
+const getGrupoPorCodigo = async (req, res, next) => {
     try {
         const grupo = await grupoService.obtenerPorCodigo(req.params.codigoGrupo);
         res.status(200).json({ success: true, data: grupo });
     } catch (error) {
-        res.status(404).json({ success: false, error: error.message });
+        next(error);
     }
 };
 
-const crearGasto = async (req, res) => {
+const crearGasto = async (req, res, next) => {
     try {
         const gastoGuardado = await grupoService.agregarGastoAGrupo(
             req.params.codigoGrupo,
@@ -39,17 +39,16 @@ const crearGasto = async (req, res) => {
             data: gastoGuardado
         });
     } catch (error) {
-        const statusCode = error.statusCode || 500;
-        res.status(statusCode).json({ success: false, error: error.message });
+        next(error);
     }
 };
 
-const calcularSaldos = async (req, res) => {
+const calcularSaldos = async (req, res, next) => {
     try {
         const saldos = await grupoService.calcularSaldos(req.params.codigoGrupo);
         res.status(200).json({ success: true, data: saldos });
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Error al calcular los saldos' });
+        next(error);
     }
 };
 
