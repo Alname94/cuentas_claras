@@ -27,6 +27,15 @@ const getGrupoPorCodigo = async (req, res, next) => {
     }
 };
 
+const eliminarGrupo = async (req, res, next) => {
+    try {
+        const resultado = await grupoService.eliminarGrupo(req.params.codigoGrupo);
+        res.status(200).json({ success: true, data: resultado });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const crearGasto = async (req, res, next) => {
     try {
         const gastoGuardado = await grupoService.agregarGastoAGrupo(
@@ -56,6 +65,7 @@ module.exports = {
     crearGrupo,
     getAllGrupos,
     getGrupoPorCodigo,
+    eliminarGrupo,
     crearGasto,
     calcularSaldos
 };

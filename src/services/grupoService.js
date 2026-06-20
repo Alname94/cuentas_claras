@@ -25,6 +25,12 @@ class GrupoService {
         return await buscarGrupo(codigoGrupo, true);
     }
 
+    async eliminarGrupo(codigoGrupo) {
+        const grupo = await buscarGrupo(codigoGrupo);
+        await grupo.deleteOne();
+        return { message: `El grupo ${grupo.nombre} fue eliminado con éxito.` };
+    }
+
     async agregarGastoAGrupo(codigoGrupo, datosGasto) {
         let { descripcion, monto, pagadoPor, divididoEntre } = datosGasto;
 
@@ -112,7 +118,7 @@ function calcularBalancesNetos(participantes, gastos) {
         if (totales[pagadoPor] !== undefined) totales[pagadoPor] += monto;
 
         // Cada participante en "divididoEntre" debe su parte proporcional del gasto
-        const cuotaParte = monto / divididoEntre.length;
+        const cuotaParte = Math.round((monto / divididoEntre.length) * 100) / 100;
         divididoEntre.forEach((p) => {
             if (balances[p] !== undefined) balances[p] -= cuotaParte;
         });
@@ -130,12 +136,12 @@ function simplificarDeudas(participantes, balances) {
     // Crear listas de deudores y acreedores
     let deudores = participantes
         .map((p) => ({ persona: p, saldo: balances[p] }))
-        .filter((x) => x.saldo < -0.01)
+        .filter((x) => x.saldo < 0)
         .sort((a, b) => a.saldo - b.saldo);
 
     let acreedores = participantes
         .map((p) => ({ persona: p, saldo: balances[p] }))
-        .filter((x) => x.saldo > 0.01)
+        .filter((x) => x.saldo > 0)
         .sort((a, b) => b.saldo - a.saldo);
 
     const transferencias = [];
@@ -160,11 +166,11 @@ function simplificarDeudas(participantes, balances) {
         }
 
         // Simular la transferencia para actualizar los saldos y avanzar en las listas
-        deudor.saldo += montoTransferencia;
-        acreedor.saldo -= montoTransferencia;
+        deudor.saldo = Math.round((deudor.saldo + montoTransferencia) * 100) / 100;
+        acreedor.saldo = Math.round((acreedor.saldo - montoTransferencia) * 100) / 100;
 
-        if (Math.abs(deudor.saldo) < 0.01) i++;
-        if (acreedor.saldo < 0.01) j++;
+        if (deudor.saldo === 0) i++;
+        if (acreedor.saldo === 0) j++;
     }
 
     return transferencias;
