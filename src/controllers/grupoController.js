@@ -2,16 +2,18 @@ const grupoService = require('../services/grupoService');
 
 const crearGrupo = async (req, res, next) => {
     try {
-        const nuevoGrupo = await grupoService.crearGrupo(req.body);
+        const { id: usuarioId } = req.usuario;
+        const nuevoGrupo = await grupoService.crearGrupo(req.body, usuarioId);
         res.status(201).json({ success: true, data: nuevoGrupo });
     } catch (error) {
         next(error);
     }
 };
 
-const getAllGrupos = async (req, res, next) => {
+const getAllGruposPorUsuario = async (req, res, next) => {
     try {
-        const grupos = await grupoService.obtenerTodosLosGrupos();
+        const { id: usuarioId } = req.usuario;
+        const grupos = await grupoService.obtenerTodosLosGruposDelUsuario(usuarioId);
         res.status(200).json({ success: true, count: grupos.length, data: grupos });
     } catch (error) {
         next(error);
@@ -20,7 +22,9 @@ const getAllGrupos = async (req, res, next) => {
 
 const getGrupoPorCodigo = async (req, res, next) => {
     try {
-        const grupo = await grupoService.obtenerPorCodigo(req.params.codigoGrupo);
+        const { id: usuarioId } = req.usuario;
+        const { codigoGrupo } = req.params;
+        const grupo = await grupoService.obtenerPorCodigo(usuarioId, codigoGrupo);
         res.status(200).json({ success: true, data: grupo });
     } catch (error) {
         next(error);
@@ -29,7 +33,9 @@ const getGrupoPorCodigo = async (req, res, next) => {
 
 const eliminarGrupo = async (req, res, next) => {
     try {
-        const resultado = await grupoService.eliminarGrupo(req.params.codigoGrupo);
+        const { id: usuarioId } = req.usuario;
+        const { codigoGrupo } = req.params;
+        const resultado = await grupoService.eliminarGrupo(usuarioId, codigoGrupo);
         res.status(200).json({ success: true, data: resultado });
     } catch (error) {
         next(error);
@@ -38,8 +44,11 @@ const eliminarGrupo = async (req, res, next) => {
 
 const crearGasto = async (req, res, next) => {
     try {
+        const { id: usuarioId } = req.usuario;
+        const { codigoGrupo } = req.params;
         const gastoGuardado = await grupoService.agregarGastoAGrupo(
-            req.params.codigoGrupo,
+            usuarioId,
+            codigoGrupo,
             req.body
         );
         res.status(201).json({
@@ -54,7 +63,9 @@ const crearGasto = async (req, res, next) => {
 
 const calcularSaldos = async (req, res, next) => {
     try {
-        const saldos = await grupoService.calcularSaldos(req.params.codigoGrupo);
+        const { id: usuarioId } = req.usuario;
+        const { codigoGrupo } = req.params;
+        const saldos = await grupoService.calcularSaldos(usuarioId, codigoGrupo);
         res.status(200).json({ success: true, data: saldos });
     } catch (error) {
         next(error);
@@ -63,7 +74,9 @@ const calcularSaldos = async (req, res, next) => {
 
 const reembolsarDeuda = async (req, res, next) => {
     try {
-        const transferencia = await grupoService.reembolsarDeuda(req.params.codigoGrupo, req.body);
+        const { id: usuarioId } = req.usuario;
+        const { codigoGrupo } = req.params;
+        const transferencia = await grupoService.reembolsarDeuda(usuarioId, codigoGrupo, req.body);
         res.status(200).json({ success: true, data: transferencia });
     } catch (error) {
         next(error);
@@ -72,7 +85,7 @@ const reembolsarDeuda = async (req, res, next) => {
 
 module.exports = {
     crearGrupo,
-    getAllGrupos,
+    getAllGruposPorUsuario,
     getGrupoPorCodigo,
     eliminarGrupo,
     crearGasto,

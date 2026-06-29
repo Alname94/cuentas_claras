@@ -5,10 +5,13 @@ const validateRequest = require('../middlewares/validateRequest');
 const { crearGrupoSchema } = require('../schemas/grupoSchema');
 const { crearGastoSchema } = require('../schemas/gastoSchema');
 const { reembolsarDeudaSchema } = require('../schemas/reembolsarDeudaSchema');
+const protegerRuta = require('../middlewares/authMiddleware');
+
+router.use(protegerRuta);
 
 router
     .route('/')
-    .get(grupoController.getAllGrupos)
+    .get(grupoController.getAllGruposPorUsuario)
     .post(validateRequest(crearGrupoSchema), grupoController.crearGrupo);
 
 router

@@ -27,7 +27,12 @@ const GrupoSchema = new mongoose.Schema(
             type: [String],
             validate: [(value) => value.length >= 1, 'El grupo debe tener al menos un participante']
         },
-        gastos: [GastoSchema]
+        gastos: [GastoSchema],
+        creador: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Usuario',
+            required: true
+        }
     },
     {
         timestamps: true,

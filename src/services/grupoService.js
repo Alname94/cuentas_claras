@@ -2,41 +2,42 @@ const Grupo = require('../models/Grupo');
 const crypto = require('crypto');
 
 class GrupoService {
-    async crearGrupo(datosGrupo) {
+    async crearGrupo(datosGrupo, usuarioId) {
         const { nombre, moneda, participantes } = datosGrupo;
 
         const codigoGrupo = crypto.randomBytes(3).toString('hex');
-
+        const creador = usuarioId;
         const nuevoGrupo = new Grupo({
             nombre,
             moneda,
             participantes,
+            creador,
             codigoGrupo
         });
 
         return await nuevoGrupo.save();
     }
 
-    async obtenerTodosLosGrupos() {
-        return await Grupo.find().select('-gastos -updatedAt').lean();
+    async obtenerTodosLosGruposDelUsuario(usuarioId) {
+        return await Grupo.find({ creador: usuarioId }).select('-gastos -updatedAt').lean();
     }
 
-    async obtenerPorCodigo(codigoGrupo) {
-        return await buscarGrupo(codigoGrupo, true);
+    async obtenerPorCodigo(creador, codigoGrupo) {
+        return await buscarGrupo(creador, codigoGrupo, true);
     }
 
-    async eliminarGrupo(codigoGrupo) {
-        const grupo = await buscarGrupo(codigoGrupo);
+    async eliminarGrupo(creador, codigoGrupo) {
+        const grupo = await buscarGrupo(creador, codigoGrupo);
         await grupo.deleteOne();
         return { message: `El grupo ${grupo.nombre} fue eliminado con éxito.` };
     }
 
-    async agregarGastoAGrupo(codigoGrupo, datosGasto) {
+    async agregarGastoAGrupo(creador, codigoGrupo, datosGasto) {
         let { descripcion, monto, pagadoPor, divididoEntre } = datosGasto;
 
         monto = Math.round(monto * 100) / 100;
 
-        const grupo = await buscarGrupo(codigoGrupo);
+        const grupo = await buscarGrupo(creador, codigoGrupo);
 
         if (!grupo.participantes.includes(pagadoPor)) {
             const error = new Error(
@@ -73,8 +74,8 @@ class GrupoService {
      * @param {string} codigoGrupo El código del grupo para el cual se quieren calcular los saldos
      * @returns Un objeto con los totales pagados por cada participante, sus balances netos y las deudas simplificadas para saldar el grupo
      */
-    async calcularSaldos(codigoGrupo) {
-        const grupo = await buscarGrupo(codigoGrupo, true);
+    async calcularSaldos(creador, codigoGrupo) {
+        const grupo = await buscarGrupo(creador, codigoGrupo, true);
 
         const { totales, balances } = calcularBalancesNetos(grupo.participantes, grupo.gastos);
         const deudasSimplificadas = simplificarDeudas(grupo.participantes, balances);
@@ -82,9 +83,9 @@ class GrupoService {
         return { totales, balances, deudasSimplificadas };
     }
 
-    async reembolsarDeuda(codigoGrupo, datosPago) {
+    async reembolsarDeuda(creador, codigoGrupo, datosPago) {
         const { de, a, monto } = datosPago;
-        const grupo = await buscarGrupo(codigoGrupo);
+        const grupo = await buscarGrupo(creador, codigoGrupo);
 
         // Validar que ambos participantes existan en este grupo específico
         if (!grupo.participantes.includes(de) || !grupo.participantes.includes(a)) {
@@ -108,8 +109,8 @@ class GrupoService {
     }
 }
 
-async function buscarGrupo(codigoGrupo, conLean = false) {
-    let query = Grupo.findOne({ codigoGrupo });
+async function buscarGrupo(creador, codigoGrupo, conLean = false) {
+    let query = Grupo.findOne({ creador, codigoGrupo });
 
     if (conLean) {
         query = query.lean();
